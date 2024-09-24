@@ -303,3 +303,160 @@ class Hero<T> {
 
 ## 类型声明文件
 类型声明文件是Typescript中的一种特殊文件，通常以.d.ts作为扩展名。它的主要作用是为现有的Javascript代码提供类型信息，使得Typescript能够在使用这些Javascript模块时能进行类型检查和提示
+
+## 装饰器
+### 简介
+- 装饰器的本质是一种特殊的**函数**，它可以对类、属性、方法、参数进行**扩展**，使代码更加简洁
+- 装饰器目前仍然是实验性特性，需要开发者手动调整配置来开启装饰器支持
+- 装饰器有五种
+   1. 类装饰器
+   2. 属性装饰器
+   3. 方法装饰器
+   4. 访问器装饰器
+   5. 参数装饰器
+
+> 在Typescript5.0 中已经支持直接使用类装饰器，但是为了确保其他装饰器可用，仍然需要使用experimentalDecorators配置来开启装饰器支持
+
+### 类装饰器
+类装饰器是一个应用在类声明上的函数，为类添加额外的功能或逻辑
+```ts
+// 类装饰器的使用
+function CoustomString(target: Function) {
+  target.prototype.toString = function () {
+    return JSON.stringify(this);
+  }
+}
+@CoustomString
+class Animal {
+  constructor(public name: string, public age: number) {}
+}
+const dog = new  Animal('dog', 10);
+console.log('装饰器测试', dog.toString());
+```
+
+> 装饰器其实就是一个函数，上面的装饰器为类改写了toString方法，装饰器在类声明的时候就生效了，装饰器函数接受的一个参数就是类本身，而toString的是类的实例，所以是this
+
+关于类的返回值：
+- 类装饰器有返回值：若返回一个新的类则会替换掉被装饰的类
+- 类装饰器无返回值：无返回值或者返回undefined，那被装饰的类不会被替换
+
+构造类型，Function的限制过于宽泛，无法代表类
+```ts
+// new 表示这是一个构造函数类型
+// args 表示可以接受任意数量，任意类型的参数
+// => {} 表示返回一个对象
+type Constructor = new (...args: any[]) => {};    
+```
+
+练习-替换被装饰的类：写一个装饰器用来记录对象的创建时间
+> 装饰器工厂：给装饰器传递参数，装饰器函数返回一个函数作为装饰器本身来接受target，其实就是给装饰器传参的方式
+
+```ts
+type Constructor = new (...args: any[]) => {};
+
+function GetTime(n: number) {
+  return function<T extends Constructor>(target: T) {
+    return class extends target {
+      createTime: Date
+      constructor(...args: any[]) {
+        super(...args);
+        this.createTime = new Date();
+      }
+      getTime() {
+        return `这个对象创建于${this.createTime}`
+      }
+      getN() {
+        return `接受的参数是${n}`
+      }
+    }
+  }
+  
+}
+
+@GetTime(3)
+class Fruit {
+  name: string
+  age: number
+  constructor(name: string, age: number) {
+    this.name = name;
+    this.age = age
+  }
+}
+interface Fruit {
+  getTime:() => string
+  getN: () => string
+}
+const apple = new Fruit( 'apple', 10)
+console.log(apple.getN());
+```
+
+> 设置多个装饰器和装饰器工厂的执行顺序：先执行装饰器工厂 从上到下，然后执行装饰器，从下到上
+
+### 属性装饰器
+```ts
+// 属性装饰器的应用
+/**
+ * @param target 对于静态属性来说是类  对于实例属性来说是类的原型对象
+ * @param propertyKey 属性名
+ */
+function Demo(target:object, propertyKey:string) {
+  console.log('属性装饰器', target, propertyKey);
+}
+
+function State(target:object, propertyKey:string) {
+  let key = `__${propertyKey}`
+  // 劫持属性的get和set做一些操作
+  Object.defineProperty(target, propertyKey,{
+    get() {
+      return this[key]
+    },
+    set(val) {
+      // 在这里可以添加一些业务代码
+      console.log('执行age的属性装饰器');
+      this[key] = val
+    }
+  })
+}
+
+class TestClass {
+  @Demo name: string
+  @State age: number
+  @Demo static school: number
+  constructor(name: string, age: number) {
+    this.name = name
+    this.age = age
+  }
+}
+
+const T1 = new TestClass('张三', 10)
+const T2 = new TestClass('李四', 20)
+T1.age = 30
+T2.age = 40
+console.log('年龄',T1.age, T2.age);
+```
+
+### 方法装饰器
+
+```ts
+// 方法装饰器，可以在方法执行前后执行一些逻辑
+function Logger(target: object, propertyKey: string, descriptor: PropertyDescriptor) {
+  // 存储原始方法
+  const oldValue = descriptor.value
+  descriptor.value = function(...args: any[]) {
+    console.log('方法执行前');
+    // 注意 不要让this丢失  调用该方法的是实例化的对象
+    const result = oldValue.apply(this, args)
+    console.log('方法执行后');
+    return result
+  }
+}
+class TestClass2 {
+  constructor(public name:string, public age:number){}
+  @Logger speak(word: string) {
+    console.log('说话', word); 
+  }
+}
+
+const T3 = new TestClass2('张三', 10)
+T3.speak('hello')
+```

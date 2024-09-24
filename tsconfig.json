@@ -11,10 +11,10 @@
     // "disableReferencedProjectLoad": true,             // 减少 TypeScript 自动加载的项目数量。
 
     // 语言和环境
-    "target": "es2016",                                  // 设置发出 JavaScript 的 JavaScript 语言版本，并包含兼容的库声明。
+    "target": "ES6",                                  // 设置发出 JavaScript 的 JavaScript 语言版本，并包含兼容的库声明。
     // "lib": [],                                        // 指定一组描述目标运行时环境的捆绑库声明文件。
     // "jsx": "preserve",                                // 指定生成的 JSX 代码。
-    // "experimentalDecorators": true,                   // 启用对遗留实验装饰器的实验支持。
+    "experimentalDecorators": true,                   // 启用对遗留实验装饰器的实验支持。
     // "emitDecoratorMetadata": true,                    // 为源文件中的装饰声明发出设计类型元数据。
     // "jsxFactory": "",                                 // 指定在针对 React JSX 发出时使用的 JSX 工厂函数，例如 'React.createElement' 或 'h'。
     // "jsxFragmentFactory": "",                         // 指定在针对 React JSX 发出时用于片段的 JSX 片段引用，例如 'React.Fragment' 或 'Fragment'。
